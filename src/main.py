@@ -8,6 +8,7 @@ from .utils import format_task
 
 
 def cmd_add(args: argparse.Namespace) -> int:
+   
     """Handle the add command."""
     try:
         task = tasks.add_task(args.title, args.priority)
@@ -19,6 +20,7 @@ def cmd_add(args: argparse.Namespace) -> int:
 
 
 def cmd_list(args: argparse.Namespace) -> int:
+    
     """Handle the list command."""
     filtered_tasks = tasks.filter_tasks(
         status=args.status,

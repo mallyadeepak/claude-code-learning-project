@@ -1,4 +1,4 @@
-"""Utility functions for the task manager."""
+"""Utility functions for the task manager application."""
 
 import json
 import uuid

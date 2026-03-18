@@ -12,6 +12,7 @@ from .utils import (
 
 
 def get_all_tasks() -> list[dict]:
+    
     """Get all tasks from storage."""
     return load_json(get_tasks_file())
 
