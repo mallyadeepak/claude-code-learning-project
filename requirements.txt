@@ -1,0 +1,2 @@
+# Task Manager CLI Dependencies
+pytest>=7.0.0
