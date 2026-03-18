@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/log-edit.sh \"$CLAUDE_FILE_PATHS\""
+            "command": "bash scripts/log-edit.sh"
           }
         ]
       }
