@@ -19,24 +19,24 @@ graph TB
     end
 
     subgraph "Task Manager Application"
-        Main["main.py<br/>CLI Entry Point"]
-        Tasks["tasks.py<br/>Task CRUD Operations"]
-        Utils["utils.py<br/>Utilities & Formatting"]
-        Skills["Claude Code Skills<br/>(/add-task, /list-tasks, etc.)"]
+        Main["main.py<br>CLI Entry Point"]
+        Tasks["tasks.py<br>Task CRUD Operations"]
+        Utils["utils.py<br>Utilities & Formatting"]
+        Skills["Claude Code Skills<br>(/add-task, /list-tasks, etc.)"]
     end
 
     subgraph "Persistence Layer"
-        JSON["tasks.json<br/>File-based Storage"]
+        JSON["tasks.json<br>File-based Storage"]
     end
 
     subgraph "Hooks & Extensions"
-        Hooks["Hooks<br/>(PreToolUse, PostToolUse)"]
-        LogEdit["log-edit.sh<br/>Edit Logging Script"]
-        EditLog["edit.log<br/>Change Log"]
+        Hooks["Hooks<br>(PreToolUse, PostToolUse)"]
+        LogEdit["log-edit.sh<br>Edit Logging Script"]
+        EditLog["edit.log<br>Change Log"]
     end
 
     subgraph "Testing"
-        Tests["pytest<br/>Unit & Integration Tests"]
+        Tests["pytest<br>Unit & Integration Tests"]
     end
 
     CLI -->|python -m src.main| Main
@@ -89,27 +89,41 @@ For filtering/read-only operations (list, stats), steps are similar but skip the
 
 ```mermaid
 sequenceDiagram
-    User->>main.py: python -m src.main add "Buy groceries"
-    main.py->>argparse: parse arguments
-    argparse->>main.py: command = 'add', title = 'Buy groceries', priority = 'medium'
-    main.py->>cmd_add: handle command
-    cmd_add->>tasks.add_task: add_task(title, priority)
-    tasks.add_task->>utils.load_json: load existing tasks from file
-    utils.load_json->>tasks.json: read file
-    tasks.json->>utils.load_json: return [] if empty or existing tasks
-    utils.load_json->>tasks.add_task: return parsed task list
-    tasks.add_task->>utils.generate_id: generate UUID
-    tasks.add_task->>utils.get_timestamp: get ISO 8601 timestamp
-    tasks.add_task->>utils.save_json: save updated task list
-    utils.save_json->>tasks.json: write JSON file
-    tasks.json->>utils.save_json: file written
-    utils.save_json->>tasks.add_task: complete
-    tasks.add_task->>cmd_add: return task dict
-    cmd_add->>main.py: task created
-    main.py->>User: print confirmation message
-    Note over hooks,edit.log: If hooks enabled (PostToolUse on Edit)
-    hooks->>log-edit.sh: run hook script
-    log-edit.sh->>edit.log: append timestamp + file path
+    participant User
+    participant Main as main.py
+    participant Args as argparse
+    participant CmdAdd as cmd_add
+    participant Tasks as tasks.add_task
+    participant LoadJSON as utils.load_json
+    participant SaveJSON as utils.save_json
+    participant GenID as utils.generate_id
+    participant TS as utils.get_timestamp
+    participant Storage as tasks.json
+    participant Hook as hooks
+    participant LogScript as log-edit.sh
+    participant Log as edit.log
+
+    User->>Main: python -m src.main add "Buy groceries"
+    Main->>Args: parse arguments
+    Args->>Main: command = 'add', title = 'Buy groceries', priority = 'medium'
+    Main->>CmdAdd: handle command
+    CmdAdd->>Tasks: add_task(title, priority)
+    Tasks->>LoadJSON: load existing tasks from file
+    LoadJSON->>Storage: read file
+    Storage->>LoadJSON: return [] if empty or existing tasks
+    LoadJSON->>Tasks: return parsed task list
+    Tasks->>GenID: generate UUID
+    Tasks->>TS: get ISO 8601 timestamp
+    Tasks->>SaveJSON: save updated task list
+    SaveJSON->>Storage: write JSON file
+    Storage->>SaveJSON: file written
+    SaveJSON->>Tasks: complete
+    Tasks->>CmdAdd: return task dict
+    CmdAdd->>Main: task created
+    Main->>User: print confirmation message
+    Note over Hook,Log: If hooks enabled (PostToolUse on Edit)
+    Hook->>LogScript: run hook script
+    LogScript->>Log: append timestamp + file path
 ```
 
 ### Infrastructure & Deployment
@@ -296,15 +310,15 @@ classDiagram
         status: str
         priority: str
         created_at: str
-        completed_at: str | None
+        completed_at: str
     }
 
     class TaskManager {
-        +get_all_tasks() list~Task~
+        +get_all_tasks() list
         +add_task(title, priority) Task
-        +complete_task(task_id) Task | None
+        +complete_task(task_id) Task
         +delete_task(task_id) bool
-        +filter_tasks(status, priority) list~Task~
+        +filter_tasks(status, priority) list
         +get_task_stats() dict
     }
 
@@ -326,11 +340,11 @@ classDiagram
         +format_task(task) str
     }
 
-    TaskManager --|> FileStore : uses
-    TaskManager --|> Task : manages
-    CLI --|> TaskManager : delegates
-    CLI --|> Formatter : uses
-    FileStore --|> Task : persists
+    TaskManager --> FileStore : uses
+    TaskManager --> Task : manages
+    CLI --> TaskManager : delegates
+    CLI --> Formatter : uses
+    FileStore --> Task : persists
 ```
 
 ### Key Data Models
@@ -392,13 +406,13 @@ These hooks are part of Claude Code's infrastructure, not the application itself
 
 ```mermaid
 graph LR
-    Main["main.py<br/>(CLI)"]
-    Tasks["tasks.py<br/>(CRUD)"]
-    Utils["utils.py<br/>(I/O & Utils)"]
-    Argparse["argparse<br/>(stdlib)"]
-    JSON["json<br/>(stdlib)"]
-    UUID["uuid<br/>(stdlib)"]
-    Path["pathlib<br/>(stdlib)"]
+    Main["main.py<br>(CLI)"]
+    Tasks["tasks.py<br>(CRUD)"]
+    Utils["utils.py<br>(I/O & Utils)"]
+    Argparse["argparse<br>(stdlib)"]
+    JSON["json<br>(stdlib)"]
+    UUID["uuid<br>(stdlib)"]
+    Path["pathlib<br>(stdlib)"]
 
     Main -->|imports| Argparse
     Main -->|imports, delegates| Tasks
