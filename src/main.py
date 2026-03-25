@@ -8,7 +8,6 @@ from .utils import format_task
 
 
 def cmd_add(args: argparse.Namespace) -> int:
-   
     """Handle the add command."""
     try:
         task = tasks.add_task(args.title, args.priority)
@@ -20,12 +19,8 @@ def cmd_add(args: argparse.Namespace) -> int:
 
 
 def cmd_list(args: argparse.Namespace) -> int:
-    
     """Handle the list command."""
-    filtered_tasks = tasks.filter_tasks(
-        status=args.status,
-        priority=args.priority
-    )
+    filtered_tasks = tasks.filter_tasks(status=args.status, priority=args.priority)
 
     if not filtered_tasks:
         print("No tasks found.")
@@ -84,24 +79,21 @@ def main() -> int:
     add_parser = subparsers.add_parser("add", help="Add a new task")
     add_parser.add_argument("title", help="Task title")
     add_parser.add_argument(
-        "-p", "--priority",
+        "-p",
+        "--priority",
         choices=["low", "medium", "high"],
         default="medium",
-        help="Task priority (default: medium)"
+        help="Task priority (default: medium)",
     )
     add_parser.set_defaults(func=cmd_add)
 
     # List command
     list_parser = subparsers.add_parser("list", help="List tasks")
     list_parser.add_argument(
-        "-s", "--status",
-        choices=["pending", "in_progress", "completed"],
-        help="Filter by status"
+        "-s", "--status", choices=["pending", "in_progress", "completed"], help="Filter by status"
     )
     list_parser.add_argument(
-        "-p", "--priority",
-        choices=["low", "medium", "high"],
-        help="Filter by priority"
+        "-p", "--priority", choices=["low", "medium", "high"], help="Filter by priority"
     )
     list_parser.set_defaults(func=cmd_list)
 

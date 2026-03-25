@@ -1,14 +1,11 @@
 """Tests for the task manager."""
 
-import json
-import tempfile
-from pathlib import Path
 from unittest import mock
 
 import pytest
 
 from src import tasks
-from src.utils import generate_id, get_timestamp, format_task
+from src.utils import format_task, generate_id, get_timestamp
 
 
 class TestUtils:
@@ -36,7 +33,7 @@ class TestUtils:
             "id": "12345678-1234-1234-1234-123456789012",
             "title": "Test task",
             "status": "pending",
-            "priority": "medium"
+            "priority": "medium",
         }
         formatted = format_task(task)
         assert "[ ]" in formatted
@@ -48,7 +45,7 @@ class TestUtils:
             "id": "12345678-1234-1234-1234-123456789012",
             "title": "Done task",
             "status": "completed",
-            "priority": "low"
+            "priority": "low",
         }
         formatted = format_task(task)
         assert "[x]" in formatted
@@ -126,7 +123,7 @@ class TestTasks:
     def test_filter_tasks_by_status(self, temp_tasks_file):
         """Test filtering tasks by status."""
         with mock.patch("src.tasks.get_tasks_file", return_value=temp_tasks_file):
-            task1 = tasks.add_task("Pending task")
+            tasks.add_task("Pending task")
             task2 = tasks.add_task("Another task")
             tasks.complete_task(task2["id"][:8])
 

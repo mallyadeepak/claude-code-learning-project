@@ -12,7 +12,6 @@ from .utils import (
 
 
 def get_all_tasks() -> list[dict]:
-    
     """Get all tasks from storage."""
     return load_json(get_tasks_file())
 
@@ -40,7 +39,7 @@ def add_task(title: str, priority: str = "medium") -> dict:
         "status": "pending",
         "priority": priority,
         "created_at": get_timestamp(),
-        "completed_at": None
+        "completed_at": None,
     }
 
     tasks = get_all_tasks()

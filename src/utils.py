@@ -44,16 +44,8 @@ def save_json(filepath: Path, data: Any) -> None:
 
 def format_task(task: dict) -> str:
     """Format a task for display."""
-    status_icons = {
-        "pending": "[ ]",
-        "in_progress": "[~]",
-        "completed": "[x]"
-    }
-    priority_colors = {
-        "low": "",
-        "medium": "*",
-        "high": "**"
-    }
+    status_icons = {"pending": "[ ]", "in_progress": "[~]", "completed": "[x]"}
+    priority_colors = {"low": "", "medium": "*", "high": "**"}
     icon = status_icons.get(task["status"], "[ ]")
     priority = priority_colors.get(task["priority"], "")
     title = task["title"]
