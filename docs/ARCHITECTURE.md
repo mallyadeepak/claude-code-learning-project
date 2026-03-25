@@ -39,6 +39,12 @@ graph TB
         Tests["pytest<br>Unit & Integration Tests"]
     end
 
+    subgraph "CI/CD (GitHub Actions)"
+        CI["ci.yml<br>Lint + Test Matrix"]
+        Release["release.yml<br>Build + GitHub Release"]
+        GHRelease["GitHub Release<br>.whl / .tar.gz"]
+    end
+
     CLI -->|python -m src.main| Main
     Skills -->|triggers| Main
     Main -->|parse args| Main
@@ -50,6 +56,8 @@ graph TB
     LogEdit -->|append| EditLog
     Tests -->|mock get_tasks_file| JSON
     Tests -->|assert results| Tasks
+    CI -->|push/PR to main| Tests
+    Release -->|v* tag| GHRelease
 ```
 
 ### Layers / Tiers
@@ -63,6 +71,7 @@ graph TB
 | **Persistence** | File-based JSON storage; create directories if needed | `data/tasks.json` (local filesystem) |
 | **Extensibility** | Custom commands and event-driven automation | Claude Code skills (`.claude/commands/`), hooks (`.claude/settings.json`) |
 | **Testing** | Unit and integration tests with mocked file I/O | pytest, test fixtures, mocking |
+| **CI/CD** | Automated lint, test matrix, and release packaging | GitHub Actions (`ci.yml`, `release.yml`), ruff, pytest-cov, python-build |
 
 ### External Integrations
 
@@ -72,6 +81,8 @@ graph TB
 | Claude Code | Hook execution (pre/post-operation events) | Shell commands via settings.json |
 | Python stdlib | Core runtime (argparse, json, uuid, datetime, pathlib) | Standard library imports |
 | pytest | Test execution and reporting | Command-line test runner |
+| GitHub Actions | CI on push/PR; release on version tags | YAML workflow definitions in `.github/workflows/` |
+| GitHub Releases | Distributable package hosting | softprops/action-gh-release via release workflow |
 
 ### Data Flow
 
@@ -465,6 +476,75 @@ graph LR
 5. **Minimal CLI Framework** — Uses only Python's built-in `argparse` rather than a third-party CLI library (Click, Typer, etc.). **Trade-off:** Zero dependencies and full control vs. boilerplate code for argument parsing and command routing. Appropriate for simplicity; would use Click for a more complex CLI.
 
 6. **Extensibility via Claude Code Skills & Hooks** — Custom commands and automation are defined in markdown (`.claude/commands/`) and shell scripts (`.claude/settings.json`, `scripts/`), not as Python code. **Trade-off:** Non-developers can extend the system without touching code; forces tight integration with Claude Code. This is a pedagogical choice to demonstrate Claude Code's capabilities.
+
+---
+
+## CI/CD Pipeline
+
+### Overview
+
+The project uses two GitHub Actions workflows triggered by different git events.
+
+```mermaid
+graph LR
+    Dev["Developer<br>Push / PR"]
+    Tag["Version Tag<br>v*.*.*"]
+
+    subgraph "ci.yml — Continuous Integration"
+        Lint["Lint Job<br>ruff format + check"]
+        Test["Test Job (matrix)<br>Python 3.11 / 3.12 / 3.13"]
+        Coverage["Coverage Gate<br>fail-under=80%"]
+    end
+
+    subgraph "release.yml — Continuous Delivery"
+        Build["Build Job<br>python -m build"]
+        RelJob["Release Job<br>softprops/action-gh-release"]
+        Artifacts["GitHub Release<br>.whl + .tar.gz"]
+    end
+
+    Dev -->|push or PR to main| Lint
+    Lint -->|passes| Test
+    Test --> Coverage
+    Tag -->|git push origin v*.*.*| Build
+    Build -->|artifacts| RelJob
+    RelJob --> Artifacts
+```
+
+### CI Workflow (`ci.yml`)
+
+Triggers on every push to `main` and on pull requests targeting `main`.
+
+| Job | Runs on | Steps |
+|-----|---------|-------|
+| `lint` | ubuntu-latest / Python 3.12 | `ruff format --check` then `ruff check` across `src/` and `tests/` |
+| `test` | ubuntu-latest / Python 3.11, 3.12, 3.13 | `pytest --cov=src --cov-fail-under=80`; uploads `.coverage` artifact on 3.12 |
+
+The `test` job is gated on `lint` — a formatting failure blocks tests from running.
+
+### Release Workflow (`release.yml`)
+
+Triggers when a tag matching `v*.*.*` is pushed.
+
+| Job | Steps |
+|-----|-------|
+| `build` | `python -m build` → produces `task_manager_cli-*.whl` and `task_manager_cli-*.tar.gz` |
+| `release` | Downloads artifacts, creates a GitHub Release with auto-generated notes and attaches both files |
+
+### Tooling
+
+| Tool | Role | Config |
+|------|------|--------|
+| ruff | Linter + formatter | `ruff.toml` (100-char line length, py311+ target) |
+| pytest-cov | Coverage measurement and enforcement | `--cov-fail-under=80` in CI command |
+| python-build | PEP 517 package builder | `pyproject.toml` (setuptools backend) |
+| softprops/action-gh-release | GitHub Release creation | `release.yml` |
+
+### To Cut a New Release
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
 
 ---
 
