@@ -1,0 +1,74 @@
+name: Deploy to Dev
+
+# Runs automatically on every push to main (after CI passes).
+# Publishes a rolling pre-release so the dev environment always
+# reflects the latest state of main.
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    needs: build
+
+    # Links this job to the "dev" GitHub Environment.
+    # Go to: Settings → Environments → dev
+    # You can add environment variables or secrets scoped to dev here.
+    environment:
+      name: dev
+      url: https://github.com/${{ github.repository }}/releases/tag/dev-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      # Delete the existing dev-latest tag/release so we can recreate it.
+      # This makes dev-latest a rolling pre-release that always points to main.
+      - name: Delete existing dev-latest release (if any)
+        run: gh release delete dev-latest --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish pre-release to dev environment
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-latest
+          name: "Dev (latest main)"
+          prerelease: true
+          files: dist/*
+          body: |
+            **Dev pre-release** — built from the latest commit on `main`.
+
+            This is not a stable release. Use a versioned release for production use.
+
+            Commit: ${{ github.sha }}
